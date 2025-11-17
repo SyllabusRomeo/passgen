@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model PasswordEntry {
+  id              String   @id @default(cuid())
+  serviceName     String
+  username        String?
+  passwordHash    String   // Encrypted/hashed password
+  url             String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastChecked     DateTime @default(now())
+  isBreached      Boolean  @default(false)
+  breachDetails   String?  // JSON string with breach information
+  isResolved      Boolean  @default(false)
+  resolvedAt      DateTime?
+  breachAlerts    BreachAlert[]
+  
+  @@index([serviceName])
+  @@index([isBreached])
+}
+
+model BreachAlert {
+  id              String   @id @default(cuid())
+  passwordEntryId String
+  passwordEntry   PasswordEntry @relation(fields: [passwordEntryId], references: [id], onDelete: Cascade)
+  breachSource    String
+  breachDate      DateTime?
+  notified        Boolean  @default(false)
+  notifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@index([passwordEntryId])
+}
