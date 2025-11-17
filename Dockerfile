@@ -6,9 +6,11 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
+# Copy package files and Prisma schema
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
+RUN rm -rf /app/node_modules/.prisma && npx prisma generate
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,7 +18,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
+# Ensure Prisma Client is generated and available
 RUN npx prisma generate
 
 # Build the application
@@ -34,10 +36,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Install wget for healthcheck
-RUN apk add --no-cache wget
-
-# Create data directory for database
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+RUN apk add --no-cache wget postgresql-client
 
 # Copy entrypoint script
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh

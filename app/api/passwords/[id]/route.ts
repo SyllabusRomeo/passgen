@@ -3,14 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { encryptPassword, decryptPassword } from '@/lib/encryption';
 import { checkPasswordBreach, checkServiceBreach } from '@/lib/breach-checker';
 import { sendEmail, generateBreachAlertEmail } from '@/lib/email';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth();
+    const { id } = await params;
     const password = await prisma.passwordEntry.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         breachAlerts: {
           orderBy: { createdAt: 'desc' },
@@ -25,11 +28,24 @@ export async function GET(
       );
     }
 
+    if (password.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json({
       ...password,
       password: decryptPassword(password.passwordHash),
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error fetching password:', error);
     return NextResponse.json(
       { error: 'Failed to fetch password' },
@@ -40,20 +56,29 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth();
+    const { id } = await params;
     const body = await request.json();
     const { serviceName, username, password, url, notes, isResolved } = body;
 
     const existing = await prisma.passwordEntry.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
       return NextResponse.json(
         { error: 'Password not found' },
         { status: 404 }
+      );
+    }
+
+    if (existing.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -67,6 +92,13 @@ export async function PUT(
 
     if (password) {
       updateData.passwordHash = encryptPassword(password);
+      updateData.lastPasswordChange = new Date();
+      updateData.passwordAge = 0;
+      
+      // Calculate new expiration date (90 days from now)
+      const passwordExpiresAt = new Date();
+      passwordExpiresAt.setDate(passwordExpiresAt.getDate() + 90);
+      updateData.passwordExpiresAt = passwordExpiresAt;
       
       // Re-check for breaches if password changed
       const passwordBreach = await checkPasswordBreach(password);
@@ -86,7 +118,7 @@ export async function PUT(
       if (isBreached && !existing.isBreached) {
         await prisma.breachAlert.create({
           data: {
-            passwordEntryId: params.id,
+            passwordEntryId: id,
             breachSource: breachDetails.join(', '),
             breachDate: new Date(),
           },
@@ -97,7 +129,7 @@ export async function PUT(
           await sendEmail({
             to: notificationEmail,
             subject: `🚨 Security Alert: Password Breach Detected for ${updateData.serviceName}`,
-            html: generateBreachAlertEmail(updateData.serviceName, breachDetails, params.id),
+            html: generateBreachAlertEmail(updateData.serviceName, breachDetails, id),
           });
         }
       }
@@ -109,7 +141,7 @@ export async function PUT(
     }
 
     const updated = await prisma.passwordEntry.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -117,7 +149,13 @@ export async function PUT(
       ...updated,
       password: decryptPassword(updated.passwordHash),
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error updating password:', error);
     return NextResponse.json(
       { error: 'Failed to update password entry' },
@@ -128,15 +166,42 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth();
+    const { id } = await params;
+    
+    const existing = await prisma.passwordEntry.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Password not found' },
+        { status: 404 }
+      );
+    }
+
+    if (existing.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
     await prisma.passwordEntry.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error deleting password:', error);
     return NextResponse.json(
       { error: 'Failed to delete password entry' },

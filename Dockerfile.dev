@@ -15,12 +15,17 @@ RUN npm ci
 # Copy application files
 COPY . .
 
-# Generate Prisma Client
+# Copy startup script
+COPY docker-startup.sh ./docker-startup.sh
+RUN chmod +x ./docker-startup.sh
+
+# Generate Prisma Client (using default location)
 RUN npx prisma generate
 
 # Expose port
 EXPOSE 3000
 
-# Start development server
+# Start development server with startup script
+ENTRYPOINT ["./docker-startup.sh"]
 CMD ["npm", "run", "dev"]
 

@@ -3,20 +3,30 @@ import { prisma } from '@/lib/prisma';
 import { decryptPassword } from '@/lib/encryption';
 import { checkPasswordBreach, checkServiceBreach } from '@/lib/breach-checker';
 import { sendEmail, generateBreachAlertEmail } from '@/lib/email';
+import { requireAuth } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth();
+    const { id } = await params;
     const passwordEntry = await prisma.passwordEntry.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!passwordEntry) {
       return NextResponse.json(
         { error: 'Password not found' },
         { status: 404 }
+      );
+    }
+
+    if (passwordEntry.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -36,7 +46,7 @@ export async function POST(
 
     // Update password entry
     const updated = await prisma.passwordEntry.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isBreached,
         breachDetails: breachDetails.length > 0 ? JSON.stringify(breachDetails) : null,
@@ -50,7 +60,7 @@ export async function POST(
     if (isBreached && !wasBreached) {
       await prisma.breachAlert.create({
         data: {
-          passwordEntryId: params.id,
+          passwordEntryId: id,
           breachSource: breachDetails.join(', '),
           breachDate: new Date(),
         },
@@ -61,11 +71,11 @@ export async function POST(
         await sendEmail({
           to: notificationEmail,
           subject: `🚨 Security Alert: Password Breach Detected for ${passwordEntry.serviceName}`,
-          html: generateBreachAlertEmail(passwordEntry.serviceName, breachDetails, params.id),
+          html: generateBreachAlertEmail(passwordEntry.serviceName, breachDetails, id),
         });
 
         await prisma.breachAlert.updateMany({
-          where: { passwordEntryId: params.id },
+          where: { passwordEntryId: id },
           data: { notified: true, notifiedAt: new Date() },
         });
       }
@@ -76,7 +86,13 @@ export async function POST(
       password: decryptPassword(updated.passwordHash),
       breachDetails: breachDetails,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error checking password:', error);
     return NextResponse.json(
       { error: 'Failed to check password' },

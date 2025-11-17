@@ -2,33 +2,67 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model PasswordEntry {
-  id              String   @id @default(cuid())
-  serviceName     String
-  username        String?
-  passwordHash    String   // Encrypted/hashed password
-  url             String?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  lastChecked     DateTime @default(now())
-  isBreached      Boolean  @default(false)
-  breachDetails   String?  // JSON string with breach information
-  isResolved      Boolean  @default(false)
-  resolvedAt      DateTime?
-  breachAlerts    BreachAlert[]
+model User {
+  id                    String        @id @default(cuid())
+  email                 String        @unique
+  passwordHash          String
+  name                  String?
+  lastPasswordChange    DateTime      @default(now())
+  passwordExpiresAt     DateTime?
+  passwordResetRequired Boolean       @default(false)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  sessions              Session[]
+  passwordEntries       PasswordEntry[]
   
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordEntry {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceName         String
+  username            String?
+  passwordHash        String   // Encrypted/hashed password
+  url                 String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  lastPasswordChange  DateTime @default(now())
+  passwordAge         Int      @default(0) // Age in days
+  passwordExpiresAt   DateTime? // When password should be changed
+  lastChecked         DateTime @default(now())
+  isBreached          Boolean  @default(false)
+  breachDetails       String?  // JSON string with breach information
+  isResolved          Boolean  @default(false)
+  resolvedAt          DateTime?
+  breachAlerts        BreachAlert[]
+  
+  @@index([userId])
   @@index([serviceName])
   @@index([isBreached])
+  @@index([passwordExpiresAt])
 }
 
 model BreachAlert {

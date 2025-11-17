@@ -3,12 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { decryptPassword } from '@/lib/encryption';
 import { checkPasswordBreach, checkServiceBreach } from '@/lib/breach-checker';
 import { sendEmail, generateBreachAlertEmail } from '@/lib/email';
+import { requireAuth } from '@/lib/auth';
 
 // This endpoint can be called periodically (e.g., via cron job) to check all passwords
 export async function POST() {
   try {
+    const session = await requireAuth();
     const passwords = await prisma.passwordEntry.findMany({
       where: {
+        userId: session.userId,
         isResolved: false, // Only check unresolved passwords
       },
     });
@@ -88,7 +91,13 @@ export async function POST() {
       message: `Monitoring complete. Checked ${results.checked} passwords, found ${results.breached} new breaches.`,
       results,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error in monitoring service:', error);
     return NextResponse.json(
       { error: 'Failed to run monitoring service' },
@@ -100,17 +109,21 @@ export async function POST() {
 // GET endpoint to check monitoring status
 export async function GET() {
   try {
+    const session = await requireAuth();
     const stats = await prisma.passwordEntry.aggregate({
       _count: {
         id: true,
       },
       where: {
+        userId: session.userId,
         isBreached: true,
         isResolved: false,
       },
     });
 
-    const totalPasswords = await prisma.passwordEntry.count();
+    const totalPasswords = await prisma.passwordEntry.count({
+      where: { userId: session.userId },
+    });
     const breachedPasswords = stats._count.id;
 
     return NextResponse.json({
@@ -118,7 +131,13 @@ export async function GET() {
       breachedPasswords,
       safePasswords: totalPasswords - breachedPasswords,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error fetching monitoring stats:', error);
     return NextResponse.json(
       { error: 'Failed to fetch monitoring stats' },

@@ -1,19 +1,52 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import PasswordGenerator from './components/PasswordGenerator';
 import PasswordList from './components/PasswordList';
 import MonitoringStatus from './components/MonitoringStatus';
+import AuthWrapper from './components/AuthWrapper';
+import Navigation from './components/Navigation';
+import SettingsPage from './components/SettingsPage';
+import BreachDashboard from './components/BreachDashboard';
 
 export default function Home() {
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'breaches' | 'settings'>('dashboard');
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const data = await response.json();
+      setUser(data.user);
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <header className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            🔐 Secure Password Manager
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            Generate, store, and monitor your passwords with intelligent breach detection
-          </p>
-        </header>
+    <AuthWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <Navigation 
+          onNavigate={setCurrentPage} 
+          currentPage={currentPage}
+          userEmail={user?.email}
+        />
+        
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {currentPage === 'dashboard' && (
+            <>
+              <header className="text-center mb-12">
+                <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                  🔐 Secure Password Manager
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-400">
+                  Generate, store, and monitor your passwords with intelligent breach detection
+                </p>
+              </header>
 
         <div className="mb-8">
           <MonitoringStatus />
@@ -56,8 +89,29 @@ export default function Home() {
           </div>
         </div>
 
-        <PasswordList />
+              <PasswordList />
+            </>
+          )}
+
+          {currentPage === 'breaches' && (
+            <>
+              <header className="text-center mb-12">
+                <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                  🔍 Breach Monitor
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-400">
+                  Real-time monitoring of your passwords against known data breaches
+                </p>
+              </header>
+              <BreachDashboard />
+            </>
+          )}
+
+          {currentPage === 'settings' && user && (
+            <SettingsPage user={user} />
+          )}
+        </div>
       </div>
-    </div>
+    </AuthWrapper>
   );
 }
