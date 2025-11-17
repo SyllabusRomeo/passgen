@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface DocFile {
   name: string;
@@ -121,10 +123,35 @@ export default function DocumentationPage() {
                 <p className="text-gray-600 dark:text-gray-400">Loading documentation...</p>
               </div>
             ) : (
-              <div className="prose dark:prose-invert max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-sm bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto">
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:text-gray-800 dark:prose-pre:text-gray-200">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({node, ...props}) => <h1 className="text-4xl font-bold mb-4 mt-8 first:mt-0" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-3xl font-bold mb-3 mt-6" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-2xl font-bold mb-2 mt-4" {...props} />,
+                    h4: ({node, ...props}) => <h4 className="text-xl font-semibold mb-2 mt-3" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 space-y-2 ml-4" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 space-y-2 ml-4" {...props} />,
+                    li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                    code: ({node, inline, ...props}: any) => 
+                      inline ? (
+                        <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
+                      ) : (
+                        <code className="block bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm font-mono mb-4" {...props} />
+                      ),
+                    pre: ({node, ...props}) => <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic my-4" {...props} />,
+                    a: ({node, ...props}) => <a className="text-blue-600 dark:text-blue-400 hover:underline" {...props} />,
+                    table: ({node, ...props}) => <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600 my-4" {...props} />,
+                    th: ({node, ...props}) => <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 bg-gray-100 dark:bg-gray-700 font-semibold text-left" {...props} />,
+                    td: ({node, ...props}) => <td className="border border-gray-300 dark:border-gray-600 px-4 py-2" {...props} />,
+                    hr: ({node, ...props}) => <hr className="my-8 border-gray-300 dark:border-gray-600" {...props} />,
+                  }}
+                >
                   {docContent}
-                </pre>
+                </ReactMarkdown>
               </div>
             )}
           </div>
