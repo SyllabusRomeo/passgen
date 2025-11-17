@@ -1,9 +1,65 @@
 # Quick Start Guide
 
-## Option 1: Run Locally (Without Docker)
+Get up and running with the Secure Password Manager in minutes!
+
+## Option 1: Docker (Recommended - Easiest)
+
+### Prerequisites
+- Docker Desktop installed
+
+### Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/SyllabusRomeo/passgen.git
+   cd passgen
+   ```
+
+2. **Build and start:**
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **Access the application:**
+   - Open http://localhost:3000 in your browser
+   - Create a new account using the signup form
+
+That's it! The application is ready to use.
+
+**Optional:** Set up email notifications by creating a `.env` file:
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
+NOTIFICATION_EMAIL=your-email@gmail.com
+HIBP_API_KEY=your-api-key
+```
+
+### Docker Commands
+
+```bash
+# View logs
+docker compose logs -f passwordgenerator
+
+# Stop containers
+docker compose down
+
+# Rebuild after changes
+docker compose up -d --build
+
+# Access container shell
+docker compose exec passwordgenerator sh
+```
+
+---
+
+## Option 2: Local Development
 
 ### Prerequisites
 - Node.js 20+ installed
+- PostgreSQL installed and running
 - npm or yarn
 
 ### Steps
@@ -17,13 +73,14 @@
    
    Create a `.env.local` file:
    ```env
-   DATABASE_URL="file:./prisma/dev.db"
+   DATABASE_URL="postgresql://user:password@localhost:5432/passwordmanager?schema=public"
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-app-password
    SMTP_FROM=your-email@gmail.com
    NOTIFICATION_EMAIL=your-email@gmail.com
+   HIBP_API_KEY=your-api-key
    ```
 
 3. **Set Up Database**
@@ -31,8 +88,11 @@
    # Generate Prisma Client
    npm run db:generate
    
-   # Run migrations (creates database if it doesn't exist)
+   # Run migrations (creates database tables)
    npm run db:migrate
+   
+   # (Optional) Seed database with sample data
+   npm run db:seed
    ```
 
 4. **Start Development Server**
@@ -42,6 +102,7 @@
 
 5. **Open Browser**
    - Navigate to: http://localhost:3000
+   - Create a new account using the signup form
 
 ### Development Commands
 
@@ -64,60 +125,37 @@ npm run db:generate
 # Open Prisma Studio (database GUI)
 npm run db:studio
 
+# Seed database
+npm run db:seed
+
 # Run monitoring script
 npm run monitor
 ```
 
 ---
 
-## Option 2: Run with Docker
+## First Steps After Setup
 
-### Prerequisites
-- Docker Desktop installed
+1. **Create Your Account:**
+   - Go to http://localhost:3000
+   - Click "Sign Up"
+   - Enter your email and password (minimum 8 characters)
+   - Click "Sign Up"
 
-### Steps
+2. **Generate Your First Password:**
+   - Use the password generator on the dashboard
+   - Customize length and character types
+   - Click "Generate Password"
 
-1. **Set Up Environment Variables**
-   
-   Create a `.env` file:
-   ```env
-   DATABASE_URL="file:./data/dev.db"
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASS=your-app-password
-   SMTP_FROM=your-email@gmail.com
-   NOTIFICATION_EMAIL=your-email@gmail.com
-   ```
+3. **Save a Password:**
+   - Click "Add Password"
+   - Fill in service name, username, password, URL, and notes
+   - Click "Save"
 
-2. **Build and Start**
-   ```bash
-   docker compose up -d --build
-   ```
-
-3. **View Logs**
-   ```bash
-   docker compose logs -f
-   ```
-
-4. **Access Application**
-   - Navigate to: http://localhost:3000
-
-### Docker Commands
-
-```bash
-# Start containers
-docker compose up -d
-
-# Stop containers
-docker compose down
-
-# View logs
-docker compose logs -f passwordgenerator
-
-# Rebuild after changes
-docker compose up -d --build
-```
+4. **Check for Breaches:**
+   - Navigate to "Breach Monitor" tab
+   - View statistics and breach status
+   - Click "Run Check Now" to check all passwords
 
 ---
 
@@ -134,16 +172,28 @@ lsof -ti:3000 | xargs kill -9
 PORT=3001 npm run dev
 ```
 
-**Database errors:**
+**Database connection errors:**
 ```bash
-# Reset database
-rm prisma/dev.db
-npm run db:migrate
+# Verify PostgreSQL is running
+# Check DATABASE_URL in .env.local
+# Ensure database exists
+createdb passwordmanager  # PostgreSQL command
 ```
 
 **Prisma Client not found:**
 ```bash
 npm run db:generate
+rm -rf .next
+npm run dev
+```
+
+**Database migration errors:**
+```bash
+# Reset database (⚠️ deletes all data)
+npx prisma migrate reset
+
+# Or run migrations manually
+npm run db:migrate
 ```
 
 ### Docker Issues
@@ -160,8 +210,32 @@ docker compose up -d
 ```
 
 **Database not persisting:**
-- Database is stored in Docker volume `password_data`
-- To reset: `docker compose down -v`
+- Database is stored in Docker volume `postgres_data`
+- To reset: `docker compose down -v` (⚠️ deletes all data)
+
+**Port conflicts:**
+- PostgreSQL uses port 5433 externally (configurable via POSTGRES_PORT)
+- Application uses port 3000
+- Change ports in `docker-compose.yml` if needed
+
+---
+
+## Environment Variables Reference
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes | Auto (Docker) |
+| `POSTGRES_USER` | PostgreSQL username | No | `passwordmanager` |
+| `POSTGRES_PASSWORD` | PostgreSQL password | No | `passwordmanager` |
+| `POSTGRES_DB` | PostgreSQL database name | No | `passwordmanager` |
+| `POSTGRES_PORT` | PostgreSQL external port | No | `5433` |
+| `SMTP_HOST` | SMTP server hostname | No | - |
+| `SMTP_PORT` | SMTP server port | No | `587` |
+| `SMTP_USER` | SMTP username | No | - |
+| `SMTP_PASS` | SMTP password/app password | No | - |
+| `SMTP_FROM` | Email sender address | No | - |
+| `NOTIFICATION_EMAIL` | Email to receive breach alerts | No | - |
+| `HIBP_API_KEY` | Have I Been Pwned API key | No | - |
 
 ---
 
@@ -169,27 +243,13 @@ docker compose up -d
 
 - [ ] Install Node.js 20+ (for local) OR Docker Desktop (for Docker)
 - [ ] Clone/download the project
-- [ ] Install dependencies: `npm install`
+- [ ] Install dependencies: `npm install` (local only)
 - [ ] Create `.env.local` (local) or `.env` (Docker) file
-- [ ] Configure SMTP settings (for email notifications)
-- [ ] Run database migrations: `npm run db:migrate`
+- [ ] Configure SMTP settings (optional, for email notifications)
+- [ ] Run database migrations: `npm run db:migrate` (local only)
 - [ ] Start the application
 - [ ] Open http://localhost:3000
-
----
-
-## Environment Variables Reference
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | SQLite database path | Yes |
-| `SMTP_HOST` | SMTP server hostname | Yes (for emails) |
-| `SMTP_PORT` | SMTP server port | Yes (for emails) |
-| `SMTP_USER` | SMTP username | Yes (for emails) |
-| `SMTP_PASS` | SMTP password/app password | Yes (for emails) |
-| `SMTP_FROM` | Email sender address | Yes (for emails) |
-| `NOTIFICATION_EMAIL` | Email to receive breach alerts | Yes (for emails) |
-| `HIBP_API_KEY` | Have I Been Pwned API key | No (optional) |
+- [ ] Create your account
 
 ---
 
@@ -197,5 +257,17 @@ docker compose up -d
 
 - Check the main [README.md](README.md) for detailed documentation
 - Check [DOCKER.md](DOCKER.md) for Docker-specific help
+- Check [LOGIN_INSTRUCTIONS.md](LOGIN_INSTRUCTIONS.md) for authentication help
 - Review error logs in the terminal/console
+- Open an issue on GitHub
 
+---
+
+## Next Steps
+
+After setup, explore:
+- **Dashboard**: Generate and manage passwords
+- **Breach Monitor**: Track password breaches and expiration
+- **Settings**: Change your password and manage account
+
+Enjoy your secure password management! 🔐
