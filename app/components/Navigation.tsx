@@ -4,7 +4,7 @@ import { useState } from 'react';
 import LogoutButton from './LogoutButton';
 
 interface NavigationProps {
-  onNavigate: (page: 'dashboard' | 'breaches' | 'settings') => void;
+  onNavigate: (page: 'dashboard' | 'breaches' | 'settings' | 'documentation') => void;
   currentPage: string;
   userEmail?: string;
 }
@@ -55,6 +55,16 @@ export default function Navigation({ onNavigate, currentPage, userEmail }: Navig
               }`}
             >
               Settings
+            </button>
+            <button
+              onClick={() => onNavigate('documentation')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                currentPage === 'documentation'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              📚 Docs
             </button>
           </div>
 
@@ -132,6 +142,19 @@ export default function Navigation({ onNavigate, currentPage, userEmail }: Navig
               }`}
             >
               Settings
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('documentation');
+                setMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left px-4 py-2 rounded-lg ${
+                currentPage === 'documentation'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              📚 Documentation
             </button>
             {userEmail && (
               <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">

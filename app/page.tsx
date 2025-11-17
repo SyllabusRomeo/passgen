@@ -8,9 +8,10 @@ import AuthWrapper from './components/AuthWrapper';
 import Navigation from './components/Navigation';
 import SettingsPage from './components/SettingsPage';
 import BreachDashboard from './components/BreachDashboard';
+import DocumentationPage from './components/DocumentationPage';
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'breaches' | 'settings'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'breaches' | 'settings' | 'documentation'>('dashboard');
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -109,6 +110,10 @@ export default function Home() {
 
           {currentPage === 'settings' && user && (
             <SettingsPage user={user} />
+          )}
+
+          {currentPage === 'documentation' && (
+            <DocumentationPage />
           )}
         </div>
       </div>

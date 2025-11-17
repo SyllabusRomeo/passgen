@@ -331,10 +331,13 @@ To set up automated breach monitoring:
 
 ## 📚 Documentation
 
-- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
-- [DOCKER.md](DOCKER.md) - Docker setup and deployment
-- [DEFAULT_CREDENTIALS.md](DEFAULT_CREDENTIALS.md) - Default credentials and features
-- [LOGIN_INSTRUCTIONS.md](LOGIN_INSTRUCTIONS.md) - Login and authentication guide
+All documentation is available in the [docs](docs/) folder and can also be accessed from within the application via the "📚 Docs" navigation link.
+
+- [Quick Start Guide](docs/QUICKSTART.md) - Get up and running in minutes
+- [Docker Setup Guide](docs/DOCKER.md) - Complete Docker setup and deployment
+- [Login Instructions](docs/LOGIN_INSTRUCTIONS.md) - Login and authentication guide
+- [Default Credentials & Features](docs/DEFAULT_CREDENTIALS.md) - Features overview and API endpoints
+- [Prisma Client Setup](docs/FIX_PRISMA.md) - Prisma configuration and troubleshooting
 
 ## 🐛 Troubleshooting
 
