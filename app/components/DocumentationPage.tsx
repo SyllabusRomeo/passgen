@@ -42,6 +42,12 @@ const documentationFiles: DocFile[] = [
     description: 'Information about Prisma Client configuration and troubleshooting.',
     path: '/docs/FIX_PRISMA.md',
   },
+  {
+    name: 'VERCEL_SUPABASE_DEPLOY.md',
+    title: 'Vercel + Supabase Deployment',
+    description: 'Step-by-step guide to deploy the app to Vercel with a Supabase PostgreSQL database.',
+    path: '/docs/VERCEL_SUPABASE_DEPLOY.md',
+  },
 ];
 
 export default function DocumentationPage() {

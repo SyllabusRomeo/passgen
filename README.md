@@ -35,6 +35,8 @@ A modern, intelligent password generator and manager with user authentication, p
 - **Prisma** - Database ORM with PostgreSQL
 - **PostgreSQL** - Robust relational database
 - **Docker** - Containerized deployment
+- **Vercel** - Serverless deployment (supported)
+- **Supabase** - Managed PostgreSQL (supported)
 - **Tailwind CSS** - Modern styling
 - **bcryptjs** - Password hashing
 - **Have I Been Pwned API** - Breach detection
@@ -42,7 +44,18 @@ A modern, intelligent password generator and manager with user authentication, p
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Vercel + Supabase (Cloud Deployment)
+
+See the full step-by-step guide: **[Vercel + Supabase Deployment Guide](docs/VERCEL_SUPABASE_DEPLOY.md)**
+
+**Quick summary:**
+
+1. Create a Supabase project at [supabase.com](https://supabase.com) for the PostgreSQL database
+2. Import the repo into Vercel at [vercel.com](https://vercel.com)
+3. Add environment variables: `DATABASE_URL`, `DIRECT_URL`, `ENCRYPTION_KEY`
+4. Deploy — Vercel runs migrations and builds automatically
+
+### Option 2: Docker (Recommended for Self-Hosting)
 
 **Prerequisites:**
 - Docker Desktop installed
@@ -101,7 +114,7 @@ docker compose up -d --build
 docker compose exec passwordgenerator sh
 ```
 
-### Option 2: Local Development
+### Option 3: Local Development
 
 **Prerequisites:**
 - Node.js 20+ installed
@@ -338,6 +351,7 @@ All documentation is available in the [docs](docs/) folder and can also be acces
 - [Login Instructions](docs/LOGIN_INSTRUCTIONS.md) - Login and authentication guide
 - [Default Credentials & Features](docs/DEFAULT_CREDENTIALS.md) - Features overview and API endpoints
 - [Prisma Client Setup](docs/FIX_PRISMA.md) - Prisma configuration and troubleshooting
+- [Vercel + Supabase Deployment](docs/VERCEL_SUPABASE_DEPLOY.md) - Deploy to Vercel with Supabase PostgreSQL
 
 ## 🐛 Troubleshooting
 
